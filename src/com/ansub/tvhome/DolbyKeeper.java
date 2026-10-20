@@ -17,7 +17,8 @@ import java.util.List;
 // audio chip still falls back to PCM whenever a new video starts, and only goes back to Dolby when the
 // Settings app sends it the output mode again (opening the Sound panel does that). Settings also sends
 // it when it hears the soundbar was plugged in, so a few seconds after any video starts this tells it
-// so. Turn off with --es dolby off. Does nothing on TVs without Xiaomi's sound receiver.
+// so. Off by default: on this TV each nudge also makes Settings show its eARC "connected" popup.
+// Turn on with --es dolby on. Does nothing on TVs without Xiaomi's sound receiver.
 final class DolbyKeeper extends AudioManager.AudioPlaybackCallback {
     private static final ComponentName RECEIVER =
             new ComponentName("com.android.tv.settings", "com.android.tv.settings.mitv.SoundDeviceReceiver");
@@ -46,7 +47,7 @@ final class DolbyKeeper extends AudioManager.AudioPlaybackCallback {
     }
 
     static boolean enabled(Context c) {
-        return c.getSharedPreferences(MainActivity.PREFS, 0).getBoolean("dolby", true);
+        return c.getSharedPreferences(MainActivity.PREFS, 0).getBoolean("dolby", false);
     }
 
     @Override public void onPlaybackConfigChanged(List<AudioPlaybackConfiguration> now) {

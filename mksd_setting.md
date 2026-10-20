@@ -91,7 +91,9 @@ TV sound settings for this:
 | Sound mode | Standard |
 | System sounds | off (menu clicks interrupt the Dolby stream and change the loudness) |
 
-Turn it off with `--es dolby off` (see below).
+**Off by default.** On this TV every nudge also makes the Settings app show its eARC "connected" popup, so with it
+on you get a popup a few seconds into every video, trailer and preview. Turn it on with `--es dolby on` only if you
+prefer that to opening the Sound panel by hand.
 
 ## Settings script: `mksd.sh`
 
@@ -119,7 +121,7 @@ H="adb -s <TV_IP>:5555 shell am start -n com.ansub.tvhome/.MainActivity"
 $H --es title "MKSD"          # name above the clock ("" hides it)
 $H --es apps "pkg1,pkg2,..."  # app row, in order
 $H --es volume on|off         # volume box
-$H --es dolby on|off          # keep Dolby passthrough on (Xiaomi bug fix)
+$H --es dolby on|off          # Dolby passthrough nudge (off by default: causes eARC popups)
 $H --es quick "bluetooth,sound,picture"   # extra settings icons by the clock
 ```
 
