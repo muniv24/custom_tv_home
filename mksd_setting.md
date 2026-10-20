@@ -33,7 +33,7 @@ Top right, reached with **Up** from the apps:
 
 | Icon | What it does |
 | --- | --- |
-| **⏻ Detox** | Bright = Detox on (MKSD is home). Dim = off (Google home). Press **OK** to switch. The first time, the TV asks "Allow USB debugging?" for `mksd@tv`. Tick *Always allow*. |
+| **⏻ Detox** | Bright = Detox on (MKSD is home). Dim = off (Google home). Press **OK** to switch. Only the Google home screen is switched: the ad and tracking apps stay off in both modes. The first time, the TV asks "Allow USB debugging?" for `mksd@tv`. Tick *Always allow*. |
 | **🔊 Volume box** | Bright = the volume box is on. Dim = off. Press **OK** to switch. |
 | **Wi-Fi** | Opens network settings. |
 
@@ -103,27 +103,24 @@ $H --es quick "bluetooth,sound,picture"   # extra settings icons by the clock
 | Change | Why | How to undo |
 | --- | --- | --- |
 | `com.google.android.tvlauncher` (Google home) disabled | So Home opens MKSD. Xiaomi always lets its own home win when it's on, even when MKSD is set as default. | ⏻ Detox off, or `undo.sh` |
-| Disabled: `tvrecommendations` (sponsored row), `backdrop` (Ambient Mode ads), `videos` (Play Movies), `youtube.tvmusic`, `play.games`, `feedback` | Ads and unused Google apps | ⏻ Detox off, or `pm enable <pkg>` |
-| Screensaver set to `com.android.dreams.basic/.Colors` | With Ambient Mode off the TV had **no screensaver and went to standby after 5 minutes**. Detox off switches back to Ambient Mode. | ⏻ Detox off |
+| Disabled in **both** modes: `tvrecommendations` (sponsored row), `backdrop` (Ambient Mode ads), `videos` (Play Movies), `youtube.tvmusic`, `play.games`, `feedback`, `tv.bugreportsender`, and Xiaomi `com.miui.tv.analytics`, `com.xiaomi.statistic`, `com.xiaomi.mitv.handbook` | Ads, tracking, unused apps. They used about 80 MB while the Google home was on | `undo.sh`, or `pm enable <pkg>` |
+| Screensaver set to `com.android.dreams.basic/.Colors` | With Ambient Mode off the TV had **no screensaver and went to standby after 5 minutes**. Kept in both modes. | see below |
 | Animations at 0.5x (`window`, `transition`, `animator_duration_scale`) | Faster feel | `settings put global <name> 1.0` |
 | App caches cleared once (about 500 MB freed) | Free storage | Nothing to undo: caches refill |
 | `SYSTEM_ALERT_WINDOW` allowed for MKSD | The volume box draws over other apps | `appops set com.ansub.tvhome SYSTEM_ALERT_WINDOW deny` |
 | Debugging key `mksd@tv` allowed | The ⏻ switch talks to the TV's own debugging | Developer options → Revoke USB debugging authorisations |
 
-Not changed: PatchWall, Xiaomi system apps, the Xiaomi analytics apps (left on: they weren't put through a restart
-test), Live TV and inputs, the keyboard, setup apps.
+Not changed: PatchWall, Xiaomi system apps, Live TV and inputs, the keyboard, setup apps.
 
 ---
 
 ## Going fully back to the stock Google home screen
 
-Easiest: press **⏻** (Detox off). Or, from the Mac:
+Press **⏻** (Detox off) to bring back the Google home screen. The ad and tracking apps stay off. For a
+fully stock TV, from the Mac:
 
 ```sh
-sh undo.sh <TV_IP>
-for p in tvrecommendations backdrop videos youtube.tvmusic play.games feedback; do
-  adb -s <TV_IP>:5555 shell pm enable com.google.android.$p
-done
+sh undo.sh <TV_IP>   # turns every app on its list back on, including the ones above
 adb -s <TV_IP>:5555 shell settings put secure screensaver_components com.google.android.backdrop/.Backdrop
 # optional: remove MKSD completely
 adb -s <TV_IP>:5555 uninstall com.ansub.tvhome
