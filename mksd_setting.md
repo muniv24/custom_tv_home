@@ -17,7 +17,7 @@ with extra features made for this TV.
 | **No ads** | "Sponsored" banner at the top, "Sponsored by JioHotstar" row, Ambient Mode ads | None. Only your apps |
 | **Less memory used** | The Google home screen alone used about **200 MB** of the TV's 1.8 GB RAM, plus about 15 MB for the sponsored row service | Those apps are off, so apps like Netflix and YouTube get the memory |
 | **Faster feel** | Menus animate at 1x | Animations at **0.5x**, so menus feel snappier |
-| **Your apps, your order** | Rows reshuffled by Google | Fixed row: **Sun NXT, Netflix, JioHotstar, Prime Video, Media Player, PatchWall**, order locked. New apps can still be added at the end |
+| **Your apps, your order** | Rows reshuffled by Google | Starts as **Sun NXT, Netflix, JioHotstar, Prime Video, Media Player, PatchWall**, and keeps whatever order you set |
 | **Soundbar volume shown** | In eARC mode the TV shows **no** volume bar | A **"Volume 42%"** box shows the soundbar's real level over any app |
 | **One-press switch** | Switching needed a laptop | **⏻ Detox** icon flips between MKSD and Google home from the remote, offline |
 | **Clean screen** | Search, Shop and Discover tabs, trending rows | Clock, MKSD title, apps, HDMI inputs, Settings |
@@ -38,8 +38,9 @@ Top right, reached with **Up** from the apps:
 | **Wi-Fi** | Opens network settings. |
 
 Bottom row: Play Store, HDMI 1, Soundbar, HDMI 3, Settings, Add app.
-With the lock on, the **order** is protected: Move and Replace (long-press or Menu on an app) show "App order is locked".
-**Add app** still works and puts the new app at the end, and **Remove from home** and Uninstall / App info still work.
+The row starts in the order from `apps.txt`. To change it, long-press (or press Menu on) an app: **Move**, **Replace**,
+**Remove from home**, Uninstall / App info. **Add app** puts a new app at the end. The order you set is saved and
+stays, through restarts and updates.
 
 **Getting back to MKSD from Google mode:** on the Google home screen, open **Apps**, then **MKSD** (purple tile),
 then **⏻**, then **OK**.
@@ -68,7 +69,7 @@ then **⏻**, then **OK**.
 
 ## Settings script: `mksd.sh`
 
-Run it after any reinstall to put everything back: app order, title, volume box and lock.
+Run it after any reinstall to put everything back: app order, title and volume box.
 
 ```sh
 sh mksd.sh <TV_IP>
@@ -80,13 +81,10 @@ Edit the values at the top of `mksd.sh` to change them:
 APPS="com.suntv.sunnxt,com.netflix.ninja,in.startv.hotstar,com.amazon.amazonvideo.livingroom,com.xiaomi.mitv.mediaexplorer,com.mitv.tvhome.atv"
 TITLE="MKSD"
 VOLUME=on   # volume box
-LOCK=on     # app order can't be moved or replaced from the remote; Add app still works
 ```
 
-To rearrange apps on the TV: set `LOCK=off`, run it, move the apps with the remote, set `LOCK=on`, and run it again.
-
-`mksd.sh` sets the row to exactly the `APPS` list. If you added apps on the TV, add their package names to `APPS`
-too, or running `mksd.sh` will take them off the row.
+`mksd.sh` sets the row to exactly the `APPS` list. Run it only after a fresh install: apps you added or moved on
+the TV since would be replaced by that list.
 
 ### Single settings (from the Mac)
 
@@ -95,7 +93,6 @@ H="adb -s <TV_IP>:5555 shell am start -n com.ansub.tvhome/.MainActivity"
 $H --es title "MKSD"          # name above the clock ("" hides it)
 $H --es apps "pkg1,pkg2,..."  # app row, in order
 $H --es volume on|off         # volume box
-$H --es lock on|off           # lock the app order (Add and Remove still work)
 $H --es quick "bluetooth,sound,picture"   # extra settings icons by the clock
 ```
 
@@ -137,7 +134,7 @@ adb -s <TV_IP>:5555 uninstall com.ansub.tvhome
 ## Developer mode
 
 - **Needed for:** the ⏻ Detox switch, and for installing updates from the Mac.
-- **Not needed for:** the MKSD home, app order, lock and volume box. These keep working with it off.
+- **Not needed for:** the MKSD home, app order and volume box. These keep working with it off.
 - If it's off, ⏻ shows "Couldn't switch Detox" and changes nothing.
 - Leaving network debugging on is reasonably safe: every new device must be approved with "Allow" on the TV.
 

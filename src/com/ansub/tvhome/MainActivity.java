@@ -213,8 +213,7 @@ public class MainActivity extends Activity {
     }
 
     // Saves an app list passed with --es apps "...", shortcuts passed with --es quick "...", a
-    // title passed with --es title "..." (empty hides it), --es volume on|off for the volume box and
-    // --es lock on|off to stop the row being changed from the remote.
+    // title passed with --es title "..." (empty hides it) and --es volume on|off for the volume box.
     // Returns true if it changed.
     // When Android kills the home screen in the background, it can start it again with the same old
     // intent; the stamp install.sh sends stops that from undoing changes made on the TV since.
@@ -223,8 +222,7 @@ public class MainActivity extends Activity {
         String quick = intent == null ? null : intent.getStringExtra("quick");
         String name = intent == null ? null : intent.getStringExtra("title");
         String volume = intent == null ? null : intent.getStringExtra("volume");
-        String lock = intent == null ? null : intent.getStringExtra("lock");
-        if (apps == null && quick == null && name == null && volume == null && lock == null) return false;
+        if (apps == null && quick == null && name == null && volume == null) return false;
         SharedPreferences prefs = getSharedPreferences(PREFS, 0);
         String stamp = intent.getStringExtra("stamp");
         if (stamp != null && stamp.equals(prefs.getString("stamp", null))) return false;
@@ -246,7 +244,6 @@ public class MainActivity extends Activity {
             else e.putString("title", name);
         }
         if (volume != null) e.putBoolean("volume", !volume.trim().equalsIgnoreCase("off"));
-        if (lock != null) e.putBoolean("lock", lock.trim().equalsIgnoreCase("on"));
         e.apply();
         if (volume != null) VolumeOverlay.apply(this);
         dirty = true;
@@ -866,8 +863,8 @@ public class MainActivity extends Activity {
         if (index < 0) return;
         final boolean user = userInstalled(key);
         dropdown(tile(key), user ? EDIT_ITEMS : EDIT_ITEMS_SYSTEM, which -> {
-            if (which == 0) { if (!orderLocked()) startMove(key); }
-            else if (which == 1) { if (!orderLocked()) showAddMenu(index); }
+            if (which == 0) startMove(key);
+            else if (which == 1) showAddMenu(index);
             else if (which == 3) {
                 Uri pkg = Uri.parse("package:" + key);
                 try { startActivity(user ? new Intent(Intent.ACTION_DELETE, pkg)
@@ -880,14 +877,6 @@ public class MainActivity extends Activity {
                 buildTiles();
             }
         });
-    }
-
-    // With --es lock on the apps keep their order: Move and Replace are off. Adding (at the end),
-    // removing and uninstalling still work.
-    private boolean orderLocked() {
-        if (!getSharedPreferences(PREFS, 0).getBoolean("lock", false)) return false;
-        toast("App order is locked. Add app and Remove still work.");
-        return true;
     }
 
     // Every launchable app that isn't on the top row yet, by name. The pick is added at the end,
