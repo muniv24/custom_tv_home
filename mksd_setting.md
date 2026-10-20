@@ -105,6 +105,7 @@ $H --es quick "bluetooth,sound,picture"   # extra settings icons by the clock
 | `com.google.android.tvlauncher` (Google home) disabled | So Home opens MKSD. Xiaomi always lets its own home win when it's on, even when MKSD is set as default. | ⏻ Detox off, or `undo.sh` |
 | Disabled in **both** modes: `tvrecommendations` (sponsored row), `backdrop` (Ambient Mode ads), `videos` (Play Movies), `youtube.tvmusic`, `play.games`, `feedback`, `tv.bugreportsender`, and Xiaomi `com.miui.tv.analytics`, `com.xiaomi.statistic`, `com.xiaomi.mitv.handbook` | Ads, tracking, unused apps. They used about 80 MB while the Google home was on | `undo.sh`, or `pm enable <pkg>` |
 | Screensaver set to `com.android.dreams.basic/.Colors` | With Ambient Mode off the TV had **no screensaver and went to standby after 5 minutes**. Kept in both modes. | see below |
+| Screensaver starts after **20 minutes** idle (`screen_off_timeout` 1200000 ms, was 5 minutes) | Less interruption while watching paused content or using menus | `settings put system screen_off_timeout 300000` |
 | Animations at 0.5x (`window`, `transition`, `animator_duration_scale`) | Faster feel | `settings put global <name> 1.0` |
 | App caches cleared once (about 500 MB freed) | Free storage | Nothing to undo: caches refill |
 | `SYSTEM_ALERT_WINDOW` allowed for MKSD | The volume box draws over other apps | `appops set com.ansub.tvhome SYSTEM_ALERT_WINDOW deny` |
