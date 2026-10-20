@@ -61,7 +61,8 @@
             </intent-filter>
         </activity-alias>
         <receiver android:name=".Boot" android:exported="true">
-            <intent-filter>
+            <!-- Boot broadcasts go to apps one at a time; high priority starts the volume box ~40 s sooner. -->
+            <intent-filter android:priority="999">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
