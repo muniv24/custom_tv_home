@@ -67,6 +67,32 @@ then **⏻**, then **OK**.
 
 ---
 
+## Dolby sound to the soundbar (DolbyKeeper)
+
+**The Xiaomi bug.** With **Settings → Sound → Digital output = Passthrough**, the soundbar should get Dolby. But each
+time a new video starts, the TV's audio chip goes back to decoding the sound itself and sends **PCM**. It only goes
+back to Dolby when the TV's Settings app sends it the output mode again: opening the Sound panel does that, which is
+why the soundbar switched to "Dolby Audio" whenever the panel was open. (With Digital output on **Auto**, it's worse:
+two parts of Xiaomi's software keep switching between Auto (PCM) and a Netflix-only "DDP" mode.)
+
+**The fix, automatic.** The MKSD background service watches for any video starting. **3 and 10 seconds later** it tells
+the Settings app "the soundbar is connected" (`android.media.action.HDMI_ARC_PLUG` to
+`com.android.tv.settings/.mitv.SoundDeviceReceiver`). Settings then re-applies Passthrough, and the soundbar shows
+**Dolby Audio**, the same as opening the panel but with nothing on screen. It works with Detox on or off, and needs no
+developer mode. It does nothing on TV speakers.
+
+TV sound settings for this:
+
+| Setting | Value |
+| --- | --- |
+| Digital output | **Passthrough** (not Auto) |
+| eARC | Auto |
+| DTS Virtual:X | all off (it's for the TV speakers and makes the TV process the sound) |
+| Sound mode | Standard |
+| System sounds | off (menu clicks interrupt the Dolby stream and change the loudness) |
+
+Turn it off with `--es dolby off` (see below).
+
 ## Settings script: `mksd.sh`
 
 Run it after any reinstall to put everything back: app order, title and volume box.
@@ -93,6 +119,7 @@ H="adb -s <TV_IP>:5555 shell am start -n com.ansub.tvhome/.MainActivity"
 $H --es title "MKSD"          # name above the clock ("" hides it)
 $H --es apps "pkg1,pkg2,..."  # app row, in order
 $H --es volume on|off         # volume box
+$H --es dolby on|off          # keep Dolby passthrough on (Xiaomi bug fix)
 $H --es quick "bluetooth,sound,picture"   # extra settings icons by the clock
 ```
 
@@ -176,7 +203,8 @@ the TV refuses it. If it's lost: uninstall MKSD, install the new build, and run 
 | File | What it is |
 | --- | --- |
 | `src/com/ansub/tvhome/MainActivity.java` | The home screen: clock, title, apps, icons, lock |
-| `src/com/ansub/tvhome/VolumeOverlay.java` | The volume box (a foreground service with an overlay) |
+| `src/com/ansub/tvhome/VolumeOverlay.java` | The volume box (a foreground service with an overlay); always runs |
+| `src/com/ansub/tvhome/DolbyKeeper.java` | Re-applies Dolby passthrough after each video starts |
 | `src/com/ansub/tvhome/Detox.java` | What ⏻ turns on and off |
 | `src/com/ansub/tvhome/AdbShell.java` | A small client for the TV's own debugging on 127.0.0.1:5555 |
 | `src/com/ansub/tvhome/Boot.java` | Starts the volume box at boot and after updates |

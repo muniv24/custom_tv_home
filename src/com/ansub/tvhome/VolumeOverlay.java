@@ -32,6 +32,7 @@ import java.io.File;
 // hide their own volume bar when a soundbar takes over, but the soundbar still reports its level over
 // HDMI-CEC and Android keeps it as the music volume, so that is what this shows.
 // Needs "draw over other apps": adb shell appops set com.ansub.tvhome SYSTEM_ALERT_WINDOW allow
+// The service also runs DolbyKeeper, so it stays running when the box is switched off.
 public class VolumeOverlay extends Service {
     private static final String VOLUME_CHANGED = "android.media.VOLUME_CHANGED_ACTION";
     private static final String MUTE_CHANGED = "android.media.STREAM_MUTE_CHANGED_ACTION";
@@ -45,24 +46,23 @@ public class VolumeOverlay extends Service {
     private float scale = 1f;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Runnable hide = () -> { if (box != null) box.setVisibility(View.GONE); };
+    private DolbyKeeper dolby;
 
     // On unless switched off with the speaker icon on the home screen or --es volume off.
     static boolean enabled(Context c) {
         return c.getSharedPreferences(MainActivity.PREFS, 0).getBoolean("volume", true);
     }
 
-    // Starts or stops the service to match the setting.
+    // Starts the service. It always runs, for DolbyKeeper; the volume setting only shows or hides the box.
     static void apply(Context c) {
-        Intent i = new Intent(c, VolumeOverlay.class);
-        if (!enabled(c)) { c.stopService(i); return; }
-        if (Build.VERSION.SDK_INT < 26 || !Settings.canDrawOverlays(c)) return;
-        try { c.startForegroundService(i); } catch (Exception ignored) {}
+        if (Build.VERSION.SDK_INT < 26) return;
+        try { c.startForegroundService(new Intent(c, VolumeOverlay.class)); } catch (Exception ignored) {}
     }
 
     private final BroadcastReceiver changed = new BroadcastReceiver() {
         @Override public void onReceive(Context c, Intent i) {
             if (i.getIntExtra("android.media.EXTRA_VOLUME_STREAM_TYPE", -1) != AudioManager.STREAM_MUSIC) return;
-            if (onTvSpeakers()) return; // the TV shows its own volume bar for its speakers
+            if (box == null || !enabled(c) || onTvSpeakers(audio)) return; // TV speakers: the TV shows its own bar
             if (VOLUME_CHANGED.equals(i.getAction())
                     && i.getIntExtra("android.media.EXTRA_VOLUME_STREAM_VALUE", -1)
                     == i.getIntExtra("android.media.EXTRA_PREV_VOLUME_STREAM_VALUE", -2)) return;
@@ -79,7 +79,7 @@ public class VolumeOverlay extends Service {
 
     // True when music plays only on the TV's own speakers (Android's speaker device, 0x2). Asks
     // AudioManager's hidden getDevicesForStream; if a TV doesn't allow it, the box shows as before.
-    private boolean onTvSpeakers() {
+    static boolean onTvSpeakers(AudioManager audio) {
         try {
             int devices = (int) AudioManager.class.getMethod("getDevicesForStream", int.class)
                     .invoke(audio, AudioManager.STREAM_MUSIC);
@@ -113,7 +113,8 @@ public class VolumeOverlay extends Service {
         audio = (AudioManager) getSystemService(AUDIO_SERVICE);
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
-        buildBox();
+        if (Settings.canDrawOverlays(this)) buildBox();
+        dolby = DolbyKeeper.start(this, audio);
 
         IntentFilter f = new IntentFilter(VOLUME_CHANGED);
         f.addAction(MUTE_CHANGED);
@@ -125,6 +126,7 @@ public class VolumeOverlay extends Service {
 
     @Override public void onDestroy() {
         unregisterReceiver(changed);
+        if (dolby != null) dolby.stop(audio);
         main.removeCallbacks(hide);
         main.removeCallbacks(settle);
         try { wm.removeView(box); } catch (Exception ignored) {}

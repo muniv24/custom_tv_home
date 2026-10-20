@@ -213,7 +213,8 @@ public class MainActivity extends Activity {
     }
 
     // Saves an app list passed with --es apps "...", shortcuts passed with --es quick "...", a
-    // title passed with --es title "..." (empty hides it) and --es volume on|off for the volume box.
+    // title passed with --es title "..." (empty hides it), --es volume on|off for the volume box and
+    // --es dolby on|off for DolbyKeeper.
     // Returns true if it changed.
     // When Android kills the home screen in the background, it can start it again with the same old
     // intent; the stamp install.sh sends stops that from undoing changes made on the TV since.
@@ -222,7 +223,8 @@ public class MainActivity extends Activity {
         String quick = intent == null ? null : intent.getStringExtra("quick");
         String name = intent == null ? null : intent.getStringExtra("title");
         String volume = intent == null ? null : intent.getStringExtra("volume");
-        if (apps == null && quick == null && name == null && volume == null) return false;
+        String dolby = intent == null ? null : intent.getStringExtra("dolby");
+        if (apps == null && quick == null && name == null && volume == null && dolby == null) return false;
         SharedPreferences prefs = getSharedPreferences(PREFS, 0);
         String stamp = intent.getStringExtra("stamp");
         if (stamp != null && stamp.equals(prefs.getString("stamp", null))) return false;
@@ -244,6 +246,7 @@ public class MainActivity extends Activity {
             else e.putString("title", name);
         }
         if (volume != null) e.putBoolean("volume", !volume.trim().equalsIgnoreCase("off"));
+        if (dolby != null) e.putBoolean("dolby", !dolby.trim().equalsIgnoreCase("off"));
         e.apply();
         if (volume != null) VolumeOverlay.apply(this);
         dirty = true;
