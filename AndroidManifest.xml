@@ -27,9 +27,18 @@
     </queries>
     <!-- Lets "Uninstall" in the app menu open Android's uninstall prompt. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- The volume percentage shown over other apps (VolumeOverlay). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- The Detox switch talks to the TV's own network debugging on 127.0.0.1 (AdbShell). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Starts the volume box at boot (Boot), also when Detox is off and this isn't the home screen. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-    <application android:label="Home" android:allowBackup="false"
+    <application android:label="MKSD" android:allowBackup="false"
+        android:icon="@drawable/icon" android:banner="@drawable/banner"
         android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
         <activity android:name=".MainActivity"
             android:exported="true"
@@ -43,5 +52,24 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- With Detox off the TV's own home screen is back: this puts MKSD in its apps, to switch back. -->
+        <activity-alias android:name=".Launcher" android:targetActivity=".MainActivity"
+            android:label="MKSD" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <receiver android:name=".Boot" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <service android:name=".VolumeOverlay" android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Shows the soundbar volume when the TV hides its own volume bar" />
+        </service>
     </application>
 </manifest>

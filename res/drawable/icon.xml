@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App icon, for Settings and app lists: an M in white on purple. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#5B2A86"
+        android:pathData="M10,0h28a10,10 0,0 1,10 10v28a10,10 0,0 1,-10 10h-28a10,10 0,0 1,-10 -10v-28a10,10 0,0 1,10 -10z" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="4.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M13,35 L13,13 L24,29 L35,13 L35,35" />
+</vector>

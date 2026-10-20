@@ -66,7 +66,7 @@ public class MainActivity extends Activity {
     // it there, off until picked the same way:
     //   --es quick "bluetooth,sound,picture"
     // (--es quick none  takes them away again; "wifi" and "ethernet" are the network tile now).
-    private static final String PREFS = "config";
+    static final String PREFS = "config";
     private static final List<String> NOT_APPS = Arrays.asList("com.android.vending", "com.android.tv.settings",
             "com.android.tv", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx",
             "com.google.android.leanbacklauncher");
@@ -83,6 +83,8 @@ public class MainActivity extends Activity {
     private static final String[] QUICK_LABELS = {"Bluetooth", "Sound", "Picture"};
     private static final int[][] QUICK_ICONS = {LineIcon.BLUETOOTH, LineIcon.SOUND, LineIcon.PICTURE};
     private static final String NETWORK = "network";
+    private static final String VOLUME_BOX = "volumebox";
+    private static final String DETOX = "detox";
     private static final int OFFLINE = 0, ETHERNET = 4; // network states; 1 to 3 are Wi-Fi bars
     // TCL keeps its own Picture and Sound panels in a service; Android's Sound page is missing there.
     private static final String TCL_SHOW_WINDOW = "com.tcl.settings.SHOW_WINDOW";
@@ -105,6 +107,7 @@ public class MainActivity extends Activity {
     private final List<String> rowApps = new ArrayList<>(); // the top row as shown, in order
     private String movingKey;   // the app being moved with left/right, if any
     private TextView moveHint;  // shown above the apps while moving
+    private TextView title;     // optional name above the date, set with --es title "..."
     private boolean longPressed; // OK was held: swallow the key-up so the app doesn't open
 
     private final BroadcastReceiver packagesChanged = new BroadcastReceiver() {
@@ -114,6 +117,9 @@ public class MainActivity extends Activity {
     // The network tile follows the connection live: Wi-Fi bars, Ethernet or Offline. Only its icon and
     // label change, so nothing is rebuilt.
     private ImageView netIcon;
+    private ImageView volumeIcon; // dimmed while the volume box is off
+    private ImageView detoxIcon;  // dimmed while Detox is off
+    private boolean switching;    // a Detox switch is running
     private int netState = -1;
     private final ConnectivityManager.NetworkCallback networkChanged = new ConnectivityManager.NetworkCallback() {
         @Override public void onAvailable(Network n) { runOnUiThread(MainActivity.this::refreshNetwork); }
@@ -128,6 +134,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         saveConfig(getIntent());
+        VolumeOverlay.apply(this);
         loadFonts();
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
         getWindow().setBackgroundDrawable(background());
@@ -150,6 +157,12 @@ public class MainActivity extends Activity {
         time.setLetterSpacing(-0.028f);
         time.setFontFeatureSettings("tnum");
         time.setIncludeFontPadding(false);
+        title = text(px(44), Color.WHITE, semibold);
+        title.setLetterSpacing(0.08f);
+        showTitle();
+        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-2, -2);
+        hp.bottomMargin = px(8);
+        clock.addView(title, hp);
         clock.addView(date);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = px(-20); // pull the big digits up under the date
@@ -190,17 +203,28 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (saveConfig(intent)) buildTiles();
+        if (saveConfig(intent)) { showTitle(); buildTiles(); }
     }
 
-    // Saves an app list passed with --es apps "..." and shortcuts passed with --es quick "...".
+    private void showTitle() {
+        String t = getSharedPreferences(PREFS, 0).getString("title", "");
+        title.setText(t);
+        title.setVisibility(t.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    // Saves an app list passed with --es apps "...", shortcuts passed with --es quick "...", a
+    // title passed with --es title "..." (empty hides it), --es volume on|off for the volume box and
+    // --es lock on|off to stop the row being changed from the remote.
     // Returns true if it changed.
     // When Android kills the home screen in the background, it can start it again with the same old
     // intent; the stamp install.sh sends stops that from undoing changes made on the TV since.
     private boolean saveConfig(Intent intent) {
         String apps = intent == null ? null : intent.getStringExtra("apps");
         String quick = intent == null ? null : intent.getStringExtra("quick");
-        if (apps == null && quick == null) return false;
+        String name = intent == null ? null : intent.getStringExtra("title");
+        String volume = intent == null ? null : intent.getStringExtra("volume");
+        String lock = intent == null ? null : intent.getStringExtra("lock");
+        if (apps == null && quick == null && name == null && volume == null && lock == null) return false;
         SharedPreferences prefs = getSharedPreferences(PREFS, 0);
         String stamp = intent.getStringExtra("stamp");
         if (stamp != null && stamp.equals(prefs.getString("stamp", null))) return false;
@@ -216,7 +240,15 @@ public class MainActivity extends Activity {
             if (quick.isEmpty() || quick.equalsIgnoreCase("none")) e.remove("quick");
             else e.putString("quick", quick);
         }
+        if (name != null) {
+            name = name.trim();
+            if (name.isEmpty()) e.remove("title");
+            else e.putString("title", name);
+        }
+        if (volume != null) e.putBoolean("volume", !volume.trim().equalsIgnoreCase("off"));
+        if (lock != null) e.putBoolean("lock", lock.trim().equalsIgnoreCase("on"));
         e.apply();
+        if (volume != null) VolumeOverlay.apply(this);
         dirty = true;
         return true;
     }
@@ -353,11 +385,17 @@ public class MainActivity extends Activity {
         int ib = px(ICON_BUTTON), ig = px(ICON_GAP);
         // The last icon's right edge lines up with the apps' (its focus circle sticks out past them).
         int qx = getResources().getDisplayMetrics().widthPixels - m + (ib - px(ICON_SIZE)) / 2
-                - (quick.size() + 1) * ib - quick.size() * ig;
+                - (quick.size() + 3) * ib - (quick.size() + 2) * ig;
         for (int q : quick) {
             addIcon(QUICK + QUICK_NAMES[q], Strings.t(QUICK_LABELS[q]), new LineIcon(QUICK_ICONS[q]), qx);
             qx += ib + ig;
         }
+        detoxIcon = addIcon(DETOX, "Detox", new LineIcon(LineIcon.POWER), qx);
+        detoxIcon.setAlpha(Detox.isOn(this) ? 1f : 0.35f);
+        qx += ib + ig;
+        volumeIcon = addIcon(VOLUME_BOX, "Volume box", new LineIcon(LineIcon.SOUND), qx);
+        volumeIcon.setAlpha(VolumeOverlay.enabled(this) ? 1f : 0.35f);
+        qx += ib + ig;
         netIcon = addIcon(NETWORK, Strings.t("Network"), null, qx);
         netState = -1;
         refreshNetwork();
@@ -501,6 +539,16 @@ public class MainActivity extends Activity {
         } else if (NETWORK.equals(key)) {
             openNetworkSettings();
             return;
+        } else if (DETOX.equals(key)) {
+            switchDetox();
+            return;
+        } else if (VOLUME_BOX.equals(key)) {
+            boolean on = !VolumeOverlay.enabled(this);
+            getSharedPreferences(PREFS, 0).edit().putBoolean("volume", on).apply();
+            VolumeOverlay.apply(this);
+            volumeIcon.setAlpha(on ? 1f : 0.35f);
+            android.widget.Toast.makeText(this, on ? "Volume box on" : "Volume box off", android.widget.Toast.LENGTH_SHORT).show();
+            return;
         } else if (key.startsWith(QUICK)) {
             openQuick(key.substring(QUICK.length()));
             return;
@@ -510,6 +558,34 @@ public class MainActivity extends Activity {
         }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try { startActivity(i); } catch (Exception ignored) {}
+    }
+
+    // Flips Detox in the background; the first time, the TV asks to allow this app's debugging key.
+    private void switchDetox() {
+        if (switching) return;
+        switching = true;
+        final boolean on = !Detox.isOn(this);
+        toast((on ? "Turning Detox on" : "Turning Detox off") + ". If the TV asks \"Allow debugging?\", press Allow.");
+        new Thread(() -> {
+            String msg;
+            try {
+                Detox.set(this, on);
+                msg = on ? "Detox on" : "Detox off: Home opens the TV's own home screen. Open MKSD from Apps to switch back.";
+            } catch (Exception e) {
+                msg = "Couldn't switch Detox: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())
+                        + ". Is network debugging on?";
+            }
+            final String m = msg;
+            runOnUiThread(() -> {
+                switching = false;
+                if (detoxIcon != null) detoxIcon.setAlpha(Detox.isOn(this) ? 1f : 0.35f);
+                toast(m);
+            });
+        }).start();
+    }
+
+    private void toast(String s) {
+        android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_LONG).show();
     }
 
     // Live TV apps an HDMI tile can open, in order. Droidlogic (Amlogic) TVs ship Live TV under their
@@ -790,8 +866,8 @@ public class MainActivity extends Activity {
         if (index < 0) return;
         final boolean user = userInstalled(key);
         dropdown(tile(key), user ? EDIT_ITEMS : EDIT_ITEMS_SYSTEM, which -> {
-            if (which == 0) startMove(key);
-            else if (which == 1) showAddMenu(index);
+            if (which == 0) { if (!orderLocked()) startMove(key); }
+            else if (which == 1) { if (!orderLocked()) showAddMenu(index); }
             else if (which == 3) {
                 Uri pkg = Uri.parse("package:" + key);
                 try { startActivity(user ? new Intent(Intent.ACTION_DELETE, pkg)
@@ -804,6 +880,14 @@ public class MainActivity extends Activity {
                 buildTiles();
             }
         });
+    }
+
+    // With --es lock on the apps keep their order: Move and Replace are off. Adding (at the end),
+    // removing and uninstalling still work.
+    private boolean orderLocked() {
+        if (!getSharedPreferences(PREFS, 0).getBoolean("lock", false)) return false;
+        toast("App order is locked. Add app and Remove still work.");
+        return true;
     }
 
     // Every launchable app that isn't on the top row yet, by name. The pick is added at the end,

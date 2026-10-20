@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The tile the TV's own home screen shows for MKSD: the name in white on purple. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#5B2A86" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#7A3DB0" android:pathData="M0,180L320,0V180Z" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="11"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M48,120 L48,60 L70,96 L92,60 L92,120
+            M110,60 L110,120 M150,60 L110,94 M124,82 L152,120
+            M210,68 C202,58 170,56 170,76 C170,92 210,86 210,104 C210,124 178,122 168,112
+            M230,60 L230,120 L246,120 C266,120 272,104 272,90 C272,76 266,60 246,60 Z" />
+</vector>

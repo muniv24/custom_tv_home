@@ -217,6 +217,23 @@ adb shell ime set <the keyboard you noted>
 
 </details>
 
+<a id="xiaomi-notes"></a>
+<details>
+<summary><b>Xiaomi / Redmi TVs: what worked, and what to keep</b></summary>
+<br>
+
+Tested on a Redmi / Xiaomi Mi TV (Android TV 10, 1.8 GB of RAM) with a soundbar on eARC.
+
+![MKSD home screen on a Redmi TV](docs/xiaomi/mksd-home.png)
+
+- **The Google home screen always wins** while it's on, even when this home screen holds the HOME role. It has to be turned off.
+- **PatchWall** (`com.mitv.tvhome.atv`) is an app, not a home screen. It stays on and works as a tile.
+- **Turning off Ambient Mode** (`com.google.android.backdrop`) sends the TV to standby after 5 minutes, unless you switch the screensaver to `com.android.dreams.basic/.Colors` first.
+- **eARC is Auto / Off** on this TV. Auto is "on". With an eARC soundbar the TV shows no volume bar.
+
+Full notes, measured memory, what's safe to turn off and what to keep, with screenshots: [docs/xiaomi-redmi.md](docs/xiaomi-redmi.md).
+</details>
+
 <details>
 <summary><b>The Claude app says it can't reach my TV</b></summary>
 <br>

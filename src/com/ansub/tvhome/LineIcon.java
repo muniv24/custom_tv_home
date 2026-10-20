@@ -23,6 +23,7 @@ final class LineIcon extends Drawable {
     static final int[] WIFI_2 = {4, 120, 195, 92, 225, 90, 4, 120, 195, 50, 225, 90, 3, 120, 195, 4};
     static final int[] WIFI_1 = {4, 120, 195, 50, 225, 90, 3, 120, 195, 4};
     static final int[] SLASH = {0, 50, 45, 1, 190, 205};
+    static final int[] POWER = {4, 120, 130, 70, -50, 280, 0, 120, 40, 1, 120, 120};
     static final int[] BLUETOOTH = {0, 70, 80, 1, 170, 160, 1, 120, 205, 1, 120, 35, 1, 170, 80, 1, 70, 160};
     static final int[] SOUND = {0, 35, 95, 1, 75, 95, 1, 120, 55, 1, 120, 185, 1, 75, 145, 1, 35, 145, 2,
             4, 120, 120, 40, -45, 90, 4, 120, 120, 78, -45, 90};
